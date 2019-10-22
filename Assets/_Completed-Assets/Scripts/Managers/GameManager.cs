@@ -29,13 +29,25 @@ namespace Complete
             m_StartWait = new WaitForSeconds (m_StartDelay);
             m_EndWait = new WaitForSeconds (m_EndDelay);
 
-            SpawnAllTanks();
-            SetCameraTargets();
+            /*  Single Game
+            // SpawnAllTanks();
+            // SetCameraTargets();
 
             // Once the tanks have been created and the camera is using them as targets, start the game.
-            StartCoroutine (GameLoop ());
+            // StartCoroutine (GameLoop ());
+            */
+
+            SpawnMyTank();
         }
 
+        void SpawnMyTank(){
+            Debug.Log("SpawnMyTank in MyComputer!");
+            PhotonNetwork.Instantiate(
+                "CompleteTank",
+                Vector3.zero,
+                Quaternion.identity,
+                0);
+        }
 
         private void SpawnAllTanks()
         {

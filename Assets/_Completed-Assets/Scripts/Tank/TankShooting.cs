@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Complete
 {
-    public class TankShooting : MonoBehaviour
+    public class TankShooting : Photon.MonoBehaviour
     {
         public int m_PlayerNumber = 1;              // Used to identify the different players.
         public Rigidbody m_Shell;                   // Prefab of the shell.
@@ -22,7 +22,7 @@ namespace Complete
         private float m_ChargeSpeed;                // How fast the launch force increases, based on the max charge time.
         private bool m_Fired;                       // Whether or not the shell has been launched with this button press.
 
-
+        
         private void OnEnable()
         {
             // When the tank is turned on, reset the launch force and the UI
@@ -43,6 +43,8 @@ namespace Complete
 
         private void Update ()
         {
+            if(!photonView.isMine) return;
+            
             // The slider should have a default value of the minimum launch force.
             m_AimSlider.value = m_MinLaunchForce;
 
@@ -51,7 +53,13 @@ namespace Complete
             {
                 // ... use the max force and launch the shell.
                 m_CurrentLaunchForce = m_MaxLaunchForce;
-                Fire ();
+                // Fire (m_CurrentLaunchForce, m_FireTransform.position, m_FireTransform.rotation);
+                photonView.RPC(
+                    "Fire",
+                    PhotonTargets.All,
+                    m_CurrentLaunchForce, 
+                    m_FireTransform.position, 
+                    m_FireTransform.rotation, (float) PhotonNetwork.time);
             }
             // Otherwise, if the fire button has just started being pressed...
             else if (Input.GetButtonDown (m_FireButton))
@@ -76,22 +84,32 @@ namespace Complete
             else if (Input.GetButtonUp (m_FireButton) && !m_Fired)
             {
                 // ... launch the shell.
-                Fire ();
+                // Fire (m_CurrentLaunchForce, m_FireTransform.position, m_FireTransform.rotation);
+                photonView.RPC(
+                    "Fire",
+                    PhotonTargets.All,
+                    m_CurrentLaunchForce, 
+                    m_FireTransform.position, 
+                    m_FireTransform.rotation, (float) PhotonNetwork.time);
             }
         }
 
-
-        private void Fire ()
+        [PunRPC]
+        private void Fire (float _CurrentLaunchForce, Vector3 _firePos, Quaternion _fireRot, float _fireTime)
         {
             // Set the fired flag so only Fire is only called once.
             m_Fired = true;
 
             // Create an instance of the shell and store a reference to it's rigidbody.
-            Rigidbody shellInstance =
-                Instantiate (m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
+            Rigidbody shellInstance = Instantiate (m_Shell, _firePos, _fireRot) as Rigidbody;
+
+            // GameObject shellIns = PhotonNetwork.Instantiate("CompleteShell", _firePos , _fireRot,0);
+            // Rigidbody shellInstance = shellIns.GetComponent<Rigidbody>();
 
             // Set the shell's velocity to the launch force in the fire position's forward direction.
-            shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward; 
+            shellInstance.velocity = _CurrentLaunchForce * shellInstance.transform.forward; 
+            
+            shellInstance.position += shellInstance.velocity * ( (float)PhotonNetwork.time - _fireTime);
 
             // Change the clip to the firing clip and play it.
             m_ShootingAudio.clip = m_FireClip;

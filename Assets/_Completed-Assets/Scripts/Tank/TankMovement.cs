@@ -20,9 +20,12 @@ namespace Complete
         private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
         private ParticleSystem[] m_particleSystems; // References to all the particles systems used by the Tanks
 
+        PhotonView photonView;
+
         private void Awake ()
         {
             m_Rigidbody = GetComponent<Rigidbody> ();
+            photonView = GetComponent<PhotonView>();
         }
 
 
@@ -72,6 +75,8 @@ namespace Complete
 
         private void Update ()
         {
+            if (!photonView.isMine) return;
+            
             // Store the value of both input axes.
             m_MovementInputValue = Input.GetAxis (m_MovementAxisName);
             m_TurnInputValue = Input.GetAxis (m_TurnAxisName);
